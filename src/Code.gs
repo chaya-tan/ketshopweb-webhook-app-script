@@ -10,57 +10,28 @@ function doPost(e) {
     // Parse the webhook data
     var data = JSON.parse(e.postData.contents);
 
-    // Log the received data
-    Logger.log("Webhook data received: %s", JSON.stringify(data));
-
     // Convert the data object to a flat array
     var flattenedData = flattenObject(data);
 
-    // Log the flattened data
-    Logger.log("Flattened data: %s", JSON.stringify(flattenedData));
-
-    // Get the existing headers
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    Logger.log("Headers: %s", headers);
-
     // Handle order update
     if (data.type === "orderUpdate") {
-      Logger.log(
-        "Handling orderUpdate for ordercode: %s",
-        flattenedData["data.ordercode"]
-      );
       var ordercode = String(flattenedData["data.ordercode"]);
       var range = sheet.getDataRange();
       var values = range.getValues();
       var found = false;
 
       for (var i = 1; i < values.length; i++) {
-        // Start from 1 to skip header row
-        Logger.log(
-          "Comparing %s with %s",
-          String(values[i][headers.indexOf("data.ordercode")]),
-          ordercode
-        );
         if (
           String(values[i][headers.indexOf("data.ordercode")]) === ordercode
         ) {
           sheet
             .getRange(i + 1, headers.indexOf("data.status") + 1)
             .setValue(flattenedData["data.status"]);
-          Logger.log(
-            "Updated status for row %s to %s",
-            i + 1,
-            flattenedData["data.status"]
-          );
           found = true;
         }
       }
 
       if (!found) {
-        Logger.log(
-          "Ordercode %s not found for update, appending as new order",
-          ordercode
-        );
         appendOrder(data);
       }
     }
